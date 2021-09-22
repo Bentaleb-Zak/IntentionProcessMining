@@ -17,7 +17,7 @@ import be.ac.ulg.montefiore.run.jahmm.toolbox.MarkovGenerator;
 
 public class Training {
 
-	private int n; // Number of enumirated possible intentions
+	private int n; // Number of enumerated possible intentions
 	private int m; // Number of observable activities
 	private int l; // length of observation sequence
 	
@@ -27,6 +27,8 @@ public class Training {
 	
 	private List<Intention> intentions;
 	private List<Context> contexts;
+	
+	double[] distancehist; // stock distance historical
 
 	public Training(int n, int m, int l){
 		
@@ -111,6 +113,9 @@ public class Training {
 		// Baum-Welch learning
 		BaumWelchLearner bwl = new BaumWelchLearner();
 		
+		double[] distancetemp = new double[epochs];
+		int k = 0;
+		
 		// Incrementally improve the solution
 		for (int i = 0; i < epochs; i++) {
 			
@@ -118,12 +123,19 @@ public class Training {
 			learnHmm = bwl.iterate(learnHmm, sequences);
 			learnHmm = updateTransition(learnHmm);
 			double d = Math.abs(distanceCalculator.distance(tempHmm, learnHmm));
+			
+			distancetemp[i] = d;
+			k++;
+			
 			System.out.println("Iteration : " + (i+1) + " || Distance : " + d);
 			
 			if(d < distance) break;
 			
 		}
-		
+		distancehist = new double[k];
+		for(int i=0; i<k; i++) {
+			distancehist[i] = distancetemp[i];
+		}
 		return learnHmm;
 	}
 	
@@ -194,4 +206,15 @@ public class Training {
 		this.contexts = contexts;
 	}
 
+
+	public double[] getDistancehist() {
+		return distancehist;
+	}
+
+
+	public void setDistancehist(double[] distancehist) {
+		this.distancehist = distancehist;
+	}
+
+	
 }

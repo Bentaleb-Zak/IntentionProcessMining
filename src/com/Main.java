@@ -4,6 +4,8 @@ package com;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.jfree.ui.RefineryUtilities;
+
 import com.scoring.Scoring;
 import com.testing.Testing;
 import com.training.Training;
@@ -40,8 +42,28 @@ public class Main {
 		training.setT(t);
 		training.setE(e);
 		
-		Hmm<ObservationInteger> trainHmm = training.train(800, 5.0E-7);
+		Hmm<ObservationInteger> trainHmm = training.train(30, 5.0E-7);
 		System.out.println(trainHmm.toString());
+		
+		double[] distancehist = training.getDistancehist();
+		int[] x = new int[distancehist.length];
+		for(int i=0; i<distancehist.length; i++) {
+			x[i] = i+1;
+		}
+		
+		// Plot distance graphwith JFreeChart 
+		LineChart_AWT chart = new LineChart_AWT(
+		         "Convergence" ,
+		         "Iterations",
+		         "Distance",
+		         "Distance vs Iterations",
+		         x,
+		         distancehist,
+		         distancehist.length);
+
+		      chart.pack( );
+		      RefineryUtilities.centerFrameOnScreen( chart );
+		      chart.setVisible( true );
 		
 		/** Scoring module **/
 		System.out.println("********** Scoring Result **********");
