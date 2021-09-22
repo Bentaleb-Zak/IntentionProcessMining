@@ -51,7 +51,7 @@ public class Main {
 			x[i] = i+1;
 		}
 		
-		// Plot distance graphwith JFreeChart 
+		// Plot distance graph with JFreeChart 
 		LineChart_AWT chart = new LineChart_AWT(
 		         "Convergence" ,
 		         "Iterations",
