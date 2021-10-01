@@ -9,11 +9,9 @@ import be.ac.ulg.montefiore.run.jahmm.ObservationInteger;
 public class Scoring {
 
 	private Hmm<ObservationInteger> hmm; // Hidden Markov Model
-	private List<ObservationInteger> oseq; // Observation sequence
 	
-	public Scoring(Hmm<ObservationInteger> hmm, List<ObservationInteger> oseq){
+	public Scoring(Hmm<ObservationInteger> hmm){
 		this.hmm = hmm;
-		this.oseq = oseq;
 	}
 	
 	public Scoring(){
@@ -23,9 +21,9 @@ public class Scoring {
 	
 	/** Computes the probability of occurrence of an observation sequence given a Hidden Markov Model
 	  * This computation use the Forward algorithm **/
-	public double probability() {
+	public double probability(List<ObservationInteger> oseq) {
 		
-		ForwardBackwardCalculator forward = new ForwardBackwardCalculator(this.oseq, this.hmm);
+		ForwardBackwardCalculator forward = new ForwardBackwardCalculator(oseq, this.hmm);
 		return forward.probability();
 		
 	}
@@ -40,12 +38,5 @@ public class Scoring {
 		this.hmm = hmm;
 	}
 
-	public List<ObservationInteger> getOseq() {
-		return oseq;
-	}
-
-	public void setOseq(List<ObservationInteger> oseq) {
-		this.oseq = oseq;
-	}
 	
 }

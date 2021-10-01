@@ -1,11 +1,13 @@
 package com;
 
 
-import java.util.ArrayList;
 import java.util.List;
 
 import org.jfree.ui.RefineryUtilities;
 
+import com.models.DBCreation;
+import com.models.DBInstance;
+import com.models.Row;
 import com.scoring.Scoring;
 import com.testing.Testing;
 import com.training.Training;
@@ -19,30 +21,56 @@ public class Main {
 
 	public static void main(String[] args) {
 
-		/** Create the parameters of the first Hidden Markov Model **/
-		int n = 2;
-		int m = 3;
-		int l = 2;
+
+		DBCreation dbcreation = new DBCreation("C:\\Users\\zakab\\eclipse-workspace\\ContextSensitiveML_v0\\src\\com\\formulaire.csv");
 		
-		double[] pi = {0.33, 0.67};
-		double[][] t = {{0.67, 0.33}, {0.67, 0.33}};
-		double[][] e = {{ 0.25, 0.75 }, { 0.6, 0.4 }};
-		List<ObservationInteger> oseq = new ArrayList<ObservationInteger>();
+		DBInstance db = dbcreation.readDatabase();
 		
-		/** Initialize the observation sequence **/
-		for(int i=0; i< 4; i++) {
-			oseq.add(new ObservationInteger(i%2));
-		}
+		System.out.println("\n################ Reading the database from the csv file ################\n");
 		
-		/** Training module **/
+		System.out.println("****************** INTENTIONS ******************");
+		db.printIntentions();
+		
+		System.out.println("******************   ACTIONS  ******************");
+		db.printActions();
+		
+		
+		// Split data into train and test
+		
+		List<Row> rows = db.getInstances();
+		
+		List<Row> trainrows = rows.subList(0, (rows.size() * 9 ) / 10);
+		List<Row> testrows = rows.subList((rows.size() * 9 ) / 10, rows.size());
+		
+		// Initialize HMM parameters
+		
+		int n = 3;
+		int m = 14;
+		int l = 5;
+		
+		double[] pi = {0.6, 0.2, 0.2};
+		double[][] t = {{0.5, 0.4, 0.1}, {0.2, 0.5, 0.3}, {0.4, 0.1, 0.5}};
+		double[][] e = {{ 0.18, 0.18, 0.18, 0.18, 0.18, 0.01, 0.01, 0.01, 0.01, 0.01, 0.01, 0.01, 0.01, 0.01 },
+				{ 0.01, 0.01, 0.01, 0.01, 0.01, 0.18, 0.18, 0.18, 0.18, 0.18, 0.01, 0.01, 0.01, 0.01 },
+				{ 0.01, 0.01, 0.01, 0.01, 0.01, 0.01, 0.01, 0.01, 0.01, 0.01, 0.18, 0.18, 0.18, 0.18 }};
+		
+		System.out.println("\n################ Training Phase ################\n");
+		
 		System.out.println("********** Training Result **********");
+		
 		Training training = new Training(n, m, l);
 		
 		training.setPi(pi);
 		training.setT(t);
 		training.setE(e);
 		
-		Hmm<ObservationInteger> trainHmm = training.train(30, 5.0E-7);
+		
+		training.setTrainRows(trainrows);
+		System.out.println("*** Before training :");
+		System.out.println(training.buildHmm().toString());
+		
+		Hmm<ObservationInteger> trainHmm = training.train(30, 5.0E-7, true);
+		System.out.println("*** After training :");
 		System.out.println(trainHmm.toString());
 		
 		double[] distancehist = training.getDistancehist();
@@ -61,25 +89,32 @@ public class Main {
 		         distancehist,
 		         distancehist.length);
 
-		      chart.pack( );
-		      RefineryUtilities.centerFrameOnScreen( chart );
-		      chart.setVisible( true );
+		chart.pack( );
+		RefineryUtilities.centerFrameOnScreen( chart );
+		chart.setVisible( true );
 		
-		/** Scoring module **/
-		System.out.println("********** Scoring Result **********");
-		Scoring scoring = new Scoring(trainHmm, oseq);
+		System.out.println("\n################ Scoring Phase ################\n");
 		
-		System.out.println("Scoring probability : " + scoring.probability() + "\n");
+		List<List<ObservationInteger>> scoringSequences = training.generateSequencesfromDB(trainrows);
+		Scoring scoring = new Scoring(trainHmm);
+		for(int i = 0; i < scoringSequences.size(); i++) {
+			System.out.println("Scoring probability for sequence " + i + " : " + scoring.probability(scoringSequences.get(i)));
+		}
+		
+		System.out.println("\n################ Testing Phase ################\n");
+		
+		List<List<ObservationInteger>> testSequences = training.generateSequencesfromDB(testrows);
+		Testing testing = new Testing(trainHmm);
+		for(int i = 0; i < testSequences.size(); i++) {
+			int[] stateSequence = testing.stateSequence(testSequences.get(i));
+			System.out.print("The most likely state sequence for sequence " + i + " : ");
+			for(int j=0; j < stateSequence.length; j++)
+				System.out.print(stateSequence[j] + " \t ");
+			System.out.println("");
+			
+		}
 		
 		
-		/** Testing module **/
-		System.out.println("********** Testing Result **********");
-		Testing testing = new Testing(trainHmm, oseq);
-		
-		System.out.println("The most likely state sequence is :");
-		int[] stateSequence = testing.stateSequence();
-		for(int j=0; j < stateSequence.length; j++)
-			System.out.print(stateSequence[j] + " \t ");
 		
 	}
 

@@ -3,8 +3,9 @@ package com.training;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.models.Context;
+import com.models.Activity;
 import com.models.Intention;
+import com.models.Row;
 
 import be.ac.ulg.montefiore.run.jahmm.Hmm;
 import be.ac.ulg.montefiore.run.jahmm.Observation;
@@ -26,7 +27,7 @@ public class Training {
 	private double[] pi; // Initial probability distribution
 	
 	private List<Intention> intentions;
-	private List<Context> contexts;
+	private List<Row> trainRows;
 	
 	double[] distancehist; // stock distance historical
 
@@ -90,6 +91,34 @@ public class Training {
 		return sequences;
 	}
 	
+	/** Generate several observation sequences from training rows using an HMM **/
+	
+	public List<List<ObservationInteger>> generateSequencesfromDB(List<Row> trainRows){
+		
+		List<List<ObservationInteger>> sequences = new ArrayList<List<ObservationInteger>>();
+		for (Row row : trainRows) {
+			List<ObservationInteger> oseq1 = new ArrayList<ObservationInteger>();
+			List<ObservationInteger> oseq2 = new ArrayList<ObservationInteger>();
+			List<ObservationInteger> oseq3 = new ArrayList<ObservationInteger>();
+			
+			for(Activity a : row.getIntention1().getActions()) {
+				oseq1.add(new ObservationInteger(a.getIndex()));
+			}
+			for(Activity a : row.getIntention2().getActions()) {
+				oseq2.add(new ObservationInteger(a.getIndex()));
+			}
+			for(Activity a : row.getIntention3().getActions()) {
+				oseq3.add(new ObservationInteger(a.getIndex()));
+			}
+			
+			sequences.add(oseq1);
+			sequences.add(oseq2);
+			sequences.add(oseq3);
+		}
+
+		return sequences;
+	}
+	
 	/** Update Transition matrix using the context probabilities **/
 	
 	public Hmm<ObservationInteger> updateTransition(Hmm<ObservationInteger> hmm) {
@@ -99,7 +128,7 @@ public class Training {
 	
 	/** Train the HMM model **/
 	
-	public Hmm<ObservationInteger> train(int epochs, double distance){
+	public Hmm<ObservationInteger> train(int epochs, double distance, boolean fromDB){
 		
 		// Build a HMM and generate observation sequences using this HMM
 		Hmm<ObservationInteger> learnHmm = buildHmm();
@@ -108,7 +137,12 @@ public class Training {
 		
 		KullbackLeiblerDistanceCalculator distanceCalculator = new KullbackLeiblerDistanceCalculator();
 		
-		List<List<ObservationInteger>> sequences = generateSequences(learnHmm, 200);
+		
+		List<List<ObservationInteger>> sequences;
+		if(fromDB) {
+			sequences = generateSequencesfromDB(this.trainRows);
+		}else sequences = generateSequences(learnHmm, 200);
+		
 		
 		// Baum-Welch learning
 		BaumWelchLearner bwl = new BaumWelchLearner();
@@ -127,7 +161,7 @@ public class Training {
 			distancetemp[i] = d;
 			k++;
 			
-			System.out.println("Iteration : " + (i+1) + " || Distance : " + d);
+			//System.out.println("Iteration : " + (i+1) + " || Distance : " + d);
 			
 			if(d < distance) break;
 			
@@ -198,14 +232,6 @@ public class Training {
 		this.intentions = intentions;
 	}
 
-	public List<Context> getContexts() {
-		return contexts;
-	}
-
-	public void setContexts(List<Context> contexts) {
-		this.contexts = contexts;
-	}
-
 
 	public double[] getDistancehist() {
 		return distancehist;
@@ -214,6 +240,16 @@ public class Training {
 
 	public void setDistancehist(double[] distancehist) {
 		this.distancehist = distancehist;
+	}
+
+
+	public List<Row> getTrainRows() {
+		return trainRows;
+	}
+
+
+	public void setTrainRows(List<Row> trainRows) {
+		this.trainRows = trainRows;
 	}
 
 	

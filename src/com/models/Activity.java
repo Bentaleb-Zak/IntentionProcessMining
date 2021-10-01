@@ -1,11 +1,11 @@
 package com.models;
 
-public class Intention {
-	
-	private int index;  // index of the intention in the Hmm model
-	private String value; // value of the intention
+public class Activity {
 
-	Intention(int index, String value){
+	private int index;  // index of the activity in the Hmm model
+	private String value; // value of the activity
+
+	Activity(int index, String value){
 		this.index = index;
 		this.value = value;
 	}
